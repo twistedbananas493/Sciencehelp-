@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-900 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Science Notes - Arcade Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: { 50: '#eef2ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 900: '#312e81' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        .clean-iframe-container { position: relative; width: 100%; height: 100%; overflow: hidden; border-radius: 1rem; }
+        .clean-iframe-container iframe { width: 100%; height: 100%; border: 0; display: block; }
+    </style>
+</head>
+<body class="h-full flex flex-col font-sans antialiased overflow-x-hidden">
+
+    <!-- HEADER NAVIGATION -->
+    <header class="sticky top-0 z-30 bg-slate-800/90 backdrop-blur border-b border-slate-700/80 px-4 lg:px-8 py-3">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="navigateToHome()">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 p-1.5">
+                    <i class="fa-solid fa-book-open text-white"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-lg tracking-tight text-white leading-none">SCIENCE<span class="text-brand-500">NOTES</span></h1>
+                    <p class="text-[10px] font-medium text-slate-400 tracking-wider uppercase">Study Reference Portal</p>
+                </div>
+            </div>
+
+            <div class="flex-1 max-w-md mx-4">
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <input type="text" id="searchInput" oninput="handleSearch()" placeholder="Search 50+ games and modules..." class="w-full bg-slate-900/80 border border-slate-700 text-slate-200 text-sm rounded-xl pl-10 pr-4 py-2 focus:outline-none focus:border-brand-500 placeholder:text-slate-500">
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
+        <!-- CATEGORY FILTERS -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none" id="categoryContainer"></div>
+
+        <!-- CATALOG SECTION -->
+        <section id="catalogSection" class="flex-1 flex flex-col gap-4">
+            <div class="flex justify-between items-center">
+                <h2 id="catalogTitle" class="text-xl font-bold text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-gamepad text-indigo-400"></i> Games & Study Modules
+                </h2>
+                <span id="gameCount" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-400">0 Items</span>
+            </div>
+
+            <div id="gamesGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5"></div>
+        </section>
+
+        <!-- PLAYER / IFRAME SECTION -->
+        <section id="playerSection" class="hidden flex-1 flex flex-col gap-4">
+            <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-800/80 p-3 sm:p-4 rounded-2xl border border-slate-700/80 sticky top-16 z-40">
+                <div class="flex items-center gap-3">
+                    <button onclick="navigateToHome()" class="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-red-600/30">
+                        <i class="fa-solid fa-arrow-left"></i> Exit Game
+                    </button>
+                    <div>
+                        <h2 id="activeGameTitle" class="font-bold text-base sm:text-lg text-white leading-tight">Module Title</h2>
+                        <span id="activeGameCategory" class="text-xs text-brand-500 font-medium">Category</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="openStealthMode()" class="px-3 py-2 rounded-xl bg-slate-700/80 text-amber-400 text-xs font-semibold flex items-center gap-2 border border-amber-500/30">
+                        <i class="fa-solid fa-mask"></i> Clean Window
+                    </button>
+                    <button onclick="reloadIframe()" class="p-2.5 rounded-xl bg-slate-700/60 text-slate-300 text-sm"><i class="fa-solid fa-rotate-right"></i></button>
+                    <button onclick="toggleFullscreen()" class="px-3 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs flex items-center gap-2">
+                        <i class="fa-solid fa-expand"></i> Fullscreen
+                    </button>
+                </div>
+            </div>
+
+            <div id="iframeWrapper" class="relative w-full aspect-video bg-black rounded-2xl border border-slate-800 overflow-hidden shadow-2xl flex items-center justify-center min-h-[450px]">
+                <div id="iframeLoader" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/90 z-10 gap-3 text-slate-400 p-6 text-center">
+                    <i class="fa-solid fa-circle-notch fa-spin text-3xl text-brand-500"></i>
+                    <p class="text-xs sm:text-sm font-medium tracking-wide">Loading Module...</p>
+                </div>
+                <div class="clean-iframe-container">
+                    <!-- Sandbox prevents games from hijacking or redirecting the main web page -->
+                    <iframe id="gameIframe" src="" sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; gamepad" allowfullscreen onload="hideIframeLoader()"></iframe>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 50 SLOTS DATABASE ARRAY -->
+    <script>
+        const GAMES_DATABASE = [
+
+            /* ==================== SLOT 1 ==================== */
+            {
+                id: "game-1",
+                title: "1v1.LOL Simulator",
+                category: "Interactive Physics",
+                iframeUrl: "./1v1lol/index.html",
+                thumbnail: "https://placehold.co/600x400/4f46e5/ffffff?text=1v1.LOL",
+                description: "Interactive physics and structural mechanics simulation module."
+            },
+
+            /* ==================== SLOT 2 ==================== */
+            {
+                id: "game-2",
+                title: "PUT GAME 2 NAME HERE",
+                category: "PUT CATEGORY HERE",
+                iframeUrl: "./PUT-GAME-2-FOLDER-PATH-HERE/index.html",
+                thumbnail: "https://placehold.co/600x400/059669/ffffff?text=Game+2",
+                description: "PUT SHORT DESCRIPTION HERE"
+            },
+
+            /* ==================== SLOT 3 ==================== */
+            {
+                id: "game-3",
+                title: "PUT GAME 3 NAME HERE",
+                category: "PUT CATEGORY HERE",
+                iframeUrl: "./PUT-GAME-3-FOLDER-PATH-HERE/index.html",
+                thumbnail: "https://placehold.co/600x400/dc2626/ffffff?text=Game+3",
+                description: "PUT SHORT DESCRIPTION HERE"
+            },
+
+            /* ==================== SLOT 4 ==================== */
+            {
+                id: "game-4",
+                title: "PUT GAME 4 NAME HERE",
+                category: "PUT CATEGORY HERE",
+                iframeUrl: "./PUT-GAME-4-FOLDER-PATH-HERE/index.html",
+                thumbnail: "https://placehold.co/600x400/d97706/ffffff?text=Game+4",
+                description: "PUT SHORT DESCRIPTION HERE"
+            },
+
+            /* ==================== SLOT 5 ==================== */
+            {
+                id: "game-5",
+                title: "PUT GAME 5 NAME HERE",
+                category: "PUT CATEGORY HERE",
+                iframeUrl: "./PUT-GAME-5-FOLDER-PATH-HERE/index.html",
+                thumbnail: "https://placehold.co/600x400/2563eb/ffffff?text=Game+5",
+                description: "PUT SHORT DESCRIPTION HERE"
+            },
+
+            /* ==================== SLOT 6 ==================== */
+            {
+                id: "game-6",
+                title: "PUT GAME 6 NAME HERE",
+                category: "PUT CATEGORY HERE",
+                iframeUrl: "./PUT-GAME-6-FOLDER-PATH-HERE/index.html",
+                thumbnail: "https://placehold.co/600x400/7c3aed/ffffff?text=Game+6",
+                description: "PUT SHORT DESCRIPTION HERE"
+            },
+
+            /* ==================== SLOT 7 ==================== */
+            {
+                id: "game-7",
+                title: "PUT GAME 7 NAME HERE",
+                category: "PUT CATEGORY HERE",
+                iframeUrl: "./PUT-GAME-7-FOLDER-PATH-HERE/index.html",
+                thumbnail: "https://placehold.co/600x400/db2777/ffffff?text=Game+7",
+                description: "PUT SHORT DESCRIPTION HERE"
+            },
+
+            /* ==================== SLOT 8 ==================== */
+            {
+                id: "game-8",
+                title: "PUT GAME 8 NAME HERE",
+                category: "PUT CATEGORY HERE",
+                iframeUrl: "./PUT-GAME-8-FOLDER-PATH-HERE/index.html",
+                thumbnail: "https://placehold.co/600x400/0284c7/ffffff?text=Game+8",
+                description: "PUT SHORT DESCRIPTION HERE"
+            },
+
+            /* ==================== SLOT 9 ==================== */
+            {
+                id: "game-9",
+                title: "PUT GAME 9 NAME HERE",
+                category: "PUT CATEGORY HERE",
+                iframeUrl: "./PUT-GAME-9-FOLDER-PATH-HERE/index.html",
+                thumbnail: "https://placehold.co/600x400/059669/ffffff?text=Game+9",
+                description: "PUT SHORT DESCRIPTION HERE"
+            },
+
+            /* ==================== SLOT 10 ==================== */
+            {
+                id: "game-10",
+                title: "PUT GAME 10 NAME HERE",
+                category: "PUT CATEGORY HERE",
+                iframeUrl: "./PUT-GAME-10-FOLDER-PATH-HERE/index.html",
+                thumbnail: "https://placehold.co/600x400/d97706/ffffff?text=Game+10",
+                description: "PUT SHORT DESCRIPTION HERE"
+            },
+
+            /* ==================== SLOT 11 ==================== */
+            { id: "game-11", title: "PUT GAME 11 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-11-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/4f46e5/ffffff?text=Game+11", description: "PUT SHORT DESCRIPTION HERE" },
+
+            /* ==================== SLOT 12 ==================== */
+            { id: "game-12", title: "PUT GAME 12 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-12-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/4f46e5/ffffff?text=Game+12", description: "PUT SHORT DESCRIPTION HERE" },
+
+            /* ==================== SLOT 13 ==================== */
+            { id: "game-13", title: "PUT GAME 13 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-13-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/059669/ffffff?text=Game+13", description: "PUT SHORT DESCRIPTION HERE" },
+
+            /* ==================== SLOT 14 ==================== */
+            { id: "game-14", title: "PUT GAME 14 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-14-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/059669/ffffff?text=Game+14", description: "PUT SHORT DESCRIPTION HERE" },
+
+            /* ==================== SLOT 15 ==================== */
+            { id: "game-15", title: "PUT GAME 15 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-15-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/dc2626/ffffff?text=Game+15", description: "PUT SHORT DESCRIPTION HERE" },
+
+            /* ==================== SLOT 16 ==================== */
+            { id: "game-16", title: "PUT GAME 16 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-16-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/dc2626/ffffff?text=Game+16", description: "PUT SHORT DESCRIPTION HERE" },
+
+            /* ==================== SLOT 17 ==================== */
+            { id: "game-17", title: "PUT GAME 17 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-17-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/7c3aed/ffffff?text=Game+17", description: "PUT SHORT DESCRIPTION HERE" },
+
+            /* ==================== SLOT 18 ==================== */
+            { id: "game-18", title: "PUT GAME 18 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-18-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/7c3aed/ffffff?text=Game+18", description: "PUT SHORT DESCRIPTION HERE" },
+
+            /* ==================== SLOT 19 ==================== */
+            { id: "game-19", title: "PUT GAME 19 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-19-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/2563eb/ffffff?text=Game+19", description: "PUT SHORT DESCRIPTION HERE" },
+
+            /* ==================== SLOT 20 ==================== */
+            { id: "game-20", title: "PUT GAME 20 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-20-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/2563eb/ffffff?text=Game+20", description: "PUT SHORT DESCRIPTION HERE" },
+
+            /* ==================== SLOTS 21 TO 50 ==================== */
+            { id: "game-21", title: "PUT GAME 21 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-21-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/334155/ffffff?text=Game+21", description: "PUT SHORT DESCRIPTION HERE" },
+            { id: "game-22", title: "PUT GAME 22 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-22-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/334155/ffffff?text=Game+22", description: "PUT SHORT DESCRIPTION HERE" },
+            { id: "game-23", title: "PUT GAME 23 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-23-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/334155/ffffff?text=Game+23", description: "PUT SHORT DESCRIPTION HERE" },
+            { id: "game-24", title: "PUT GAME 24 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-24-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/334155/ffffff?text=Game+24", description: "PUT SHORT DESCRIPTION HERE" },
+            { id: "game-25", title: "PUT GAME 25 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-25-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/334155/ffffff?text=Game+25", description: "PUT SHORT DESCRIPTION HERE" },
+            { id: "game-26", title: "PUT GAME 26 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-26-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/334155/ffffff?text=Game+26", description: "PUT SHORT DESCRIPTION HERE" },
+            { id: "game-27", title: "PUT GAME 27 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-27-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/334155/ffffff?text=Game+27", description: "PUT SHORT DESCRIPTION HERE" },
+            { id: "game-28", title: "PUT GAME 28 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-28-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/334155/ffffff?text=Game+28", description: "PUT SHORT DESCRIPTION HERE" },
+            { id: "game-29", title: "PUT GAME 29 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-29-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/334155/ffffff?text=Game+29", description: "PUT SHORT DESCRIPTION HERE" },
+            { id: "game-30", title: "PUT GAME 30 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-30-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/334155/ffffff?text=Game+30", description: "PUT SHORT DESCRIPTION HERE" },
+            { id: "game-31", title: "PUT GAME 31 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-31-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/334155/ffffff?text=Game+31", description: "PUT SHORT DESCRIPTION HERE" },
+            { id: "game-32", title: "PUT GAME 32 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-32-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/334155/ffffff?text=Game+32", description: "PUT SHORT DESCRIPTION HERE" },
+            { id: "game-33", title: "PUT GAME 33 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-33-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/334155/ffffff?text=Game+33", description: "PUT SHORT DESCRIPTION HERE" },
+            { id: "game-34", title: "PUT GAME 34 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-34-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/334155/ffffff?text=Game+34", description: "PUT SHORT DESCRIPTION HERE" },
+            { id: "game-35", title: "PUT GAME 35 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-35-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/334155/ffffff?text=Game+35", description: "PUT SHORT DESCRIPTION HERE" },
+            { id: "game-36", title: "PUT GAME 36 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-36-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/334155/ffffff?text=Game+36", description: "PUT SHORT DESCRIPTION HERE" },
+            { id: "game-37", title: "PUT GAME 37 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-37-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/334155/ffffff?text=Game+37", description: "PUT SHORT DESCRIPTION HERE" },
+            { id: "game-38", title: "PUT GAME 38 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-38-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/334155/ffffff?text=Game+38", description: "PUT SHORT DESCRIPTION HERE" },
+            { id: "game-39", title: "PUT GAME 39 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-39-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/334155/ffffff?text=Game+39", description: "PUT SHORT DESCRIPTION HERE" },
+            { id: "game-40", title: "PUT GAME 40 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-40-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/334155/ffffff?text=Game+40", description: "PUT SHORT DESCRIPTION HERE" },
+            { id: "game-41", title: "PUT GAME 41 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-41-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/334155/ffffff?text=Game+41", description: "PUT SHORT DESCRIPTION HERE" },
+            { id: "game-42", title: "PUT GAME 42 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-42-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/334155/ffffff?text=Game+42", description: "PUT SHORT DESCRIPTION HERE" },
+            { id: "game-43", title: "PUT GAME 43 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-43-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/334155/ffffff?text=Game+43", description: "PUT SHORT DESCRIPTION HERE" },
+            { id: "game-44", title: "PUT GAME 44 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-44-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/334155/ffffff?text=Game+44", description: "PUT SHORT DESCRIPTION HERE" },
+            { id: "game-45", title: "PUT GAME 45 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-45-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/334155/ffffff?text=Game+45", description: "PUT SHORT DESCRIPTION HERE" },
+            { id: "game-46", title: "PUT GAME 46 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-46-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/334155/ffffff?text=Game+46", description: "PUT SHORT DESCRIPTION HERE" },
+            { id: "game-47", title: "PUT GAME 47 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-47-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/334155/ffffff?text=Game+47", description: "PUT SHORT DESCRIPTION HERE" },
+            { id: "game-48", title: "PUT GAME 48 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-48-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/334155/ffffff?text=Game+48", description: "PUT SHORT DESCRIPTION HERE" },
+            { id: "game-49", title: "PUT GAME 49 NAME HERE", category: "PUT CATEGORY HERE", iframeUrl: "./PUT-GAME-49-FOLDER-PATH-HERE/index.html", thumbnail: "https://placehold.co/600x400/334155/ffffff?text=Game+49", description: "PUT SHORT DESCRIPTION HERE" },
+
+            /* ==================== SLOT 50 ==================== */
+            {
+                id: "game-50",
+                title: "PUT GAME 50 NAME HERE",
+                category: "PUT CATEGORY HERE",
+                iframeUrl: "./PUT-GAME-50-FOLDER-PATH-HERE/index.html",
+                thumbnail: "https://placehold.co/600x400/334155/ffffff?text=Game+50",
+                description: "PUT SHORT DESCRIPTION HERE"
+            }
+        ];
+
+        let selectedCategory = "All";
+        let searchQuery = "";
+        let activeGame = null;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            renderCategoryFilterButtons();
+            renderCatalog();
+        });
+
+        function renderCategoryFilterButtons() {
+            const categories = ["All", ...new Set(GAMES_DATABASE.map(g => g.category))];
+            document.getElementById("categoryContainer").innerHTML = categories.map(cat => `
+                <button onclick="setCategory('${cat}')" class="px-4 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border ${selectedCategory === cat ? 'bg-brand-600 border-brand-500 text-white shadow-md' : 'bg-slate-800/80 border-slate-700/80 text-slate-400'}">
+                    ${cat}
+                </button>
+            `).join('');
+        }
+
+        function renderCatalog() {
+            const grid = document.getElementById("gamesGrid");
+            let filtered = GAMES_DATABASE.filter(g => (selectedCategory === "All" || g.category === selectedCategory) && g.title.toLowerCase().includes(searchQuery.toLowerCase()));
+            document.getElementById("gameCount").innerText = `${filtered.length} Items`;
+            grid.innerHTML = filtered.map(game => `
+                <div class="group relative bg-slate-800/70 border border-slate-700/60 hover:border-slate-600 rounded-2xl overflow-hidden shadow-lg transition-all duration-300 hover:-translate-y-1 flex flex-col">
+                    <div class="relative aspect-video w-full overflow-hidden bg-slate-900">
+                        <img src="${game.thumbnail}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"/>
+                        <span class="absolute bottom-2.5 left-2.5 px-2 py-0.5 rounded-lg bg-slate-900/80 backdrop-blur border text-[10px] font-semibold text-brand-400">${game.category}</span>
+                    </div>
+                    <div class="p-4 flex-1 flex flex-col justify-between gap-3">
+                        <div>
+                            <h3 class="font-bold text-slate-100 text-sm group-hover:text-brand-400 line-clamp-1">${game.title}</h3>
+                            <p class="text-slate-400 text-xs mt-1 line-clamp-2">${game.description}</p>
+                        </div>
+                        <button onclick="launchGame('${game.id}')" class="w-full py-2 px-3 rounded-xl bg-slate-700/60 hover:bg-brand-600 text-slate-200 hover:text-white font-semibold text-xs transition-all flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-play text-[10px]"></i> Launch Game
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function setCategory(cat) { selectedCategory = cat; renderCategoryFilterButtons(); renderCatalog(); }
+        function handleSearch() { searchQuery = document.getElementById("searchInput").value; renderCatalog(); }
+
+        function launchGame(id) {
+            const game = GAMES_DATABASE.find(g => g.id === id);
+            if (!game) return;
+            activeGame = game;
+            document.getElementById("catalogSection").classList.add("hidden");
+            document.getElementById("playerSection").classList.remove("hidden");
+            document.getElementById("activeGameTitle").innerText = game.title;
+            document.getElementById("activeGameCategory").innerText = game.category;
+            document.getElementById("iframeLoader").classList.remove("hidden");
+            document.getElementById("gameIframe").src = game.iframeUrl;
+        }
+
+        function navigateToHome() {
+            document.getElementById("playerSection").classList.add("hidden");
+            document.getElementById("catalogSection").classList.remove("hidden");
+            document.getElementById("gameIframe").src = "";
+            activeGame = null;
+        }
+
+        function hideIframeLoader() { document.getElementById("iframeLoader").classList.add("hidden"); }
+        function reloadIframe() { if (activeGame) document.getElementById("gameIframe").src = activeGame.iframeUrl; }
+        function openStealthMode() {
+            if (!activeGame) return;
+            const w = window.open('about:blank', '_blank');
+            if (w) w.document.write(`<iframe src="${activeGame.iframeUrl}" style="width:100%;height:100%;border:none;margin:0"></iframe>`);
+        }
+        function toggleFullscreen() {
+            const wrap = document.getElementById("iframeWrapper");
+            if (!document.fullscreenElement) wrap.requestFullscreen?.();
+            else document.exitFullscreen?.();
+        }
+    </script>
+</body>
+</html>
